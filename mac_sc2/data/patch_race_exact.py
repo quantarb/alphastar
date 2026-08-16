@@ -79,8 +79,10 @@ def examples(path, version, specs, stats=None, history_size=16):
         if task not in indices: discarded["no_live_task"]+=1; continue
         action=from_event(event,".".join(version.split(".")[:3]),races[pid],[str(units[x][0]) for x in selected[pid] if x in units])
         candidate={"actor":action.actor_role,"target_kind":action.target_kind,"target_type":action.target_name,"queue":action.queued,"payload":action.payload_role,"family":action.family,"replay_ability":action.ability_name}
+        if any("replay_ability_id" in row for row in specs[task]):
+            candidate["replay_ability_id"] = action.ability_id
         # Match the registry entry including target type and queue; ability is resolved only by registry.
-        label=next((i for i,row in enumerate(specs[task]) if all(row[k]==v for k,v in candidate.items())),None)
+        label=next((i for i,row in enumerate(specs[task]) if all(row.get(k)==v for k,v in candidate.items())),None)
         if label is None: discarded["ambiguous_or_unexecutable"]+=1; continue
         snapshot, ids=_snapshot(units,pid,homes[pid])
         if not snapshot: discarded["empty_snapshot"]+=1; continue

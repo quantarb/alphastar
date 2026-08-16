@@ -67,6 +67,10 @@ For every playable-agent training run:
 ## Patch and action validity
 
 - The installed playable client is SC2 4.9.2 (`Base97563`).
+- The runnable policy and live evaluation apply **only** to this installed
+  current patch.  Historical-patch replay work is explicitly research-only:
+  it may train task-local offline heads or a shared representation, but those
+  heads must never be loaded by, evaluated as, or described as a live policy.
 - A model run in this client may emit only actions executable by its runner on
   4.9.2.
 - Patch/race MTL is allowed only if every patch/race task still has a complete
