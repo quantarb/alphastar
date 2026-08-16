@@ -5,6 +5,8 @@ import hashlib
 import json
 from pathlib import Path
 
+SUPPORTED_RACES = frozenset(("Terran", "Protoss", "Zerg"))
+
 
 def task_key(patch: str, race: str) -> str:
     return f"{patch}/{race}"
@@ -16,6 +18,10 @@ def build_specs(registry_path: str) -> dict[str, list[dict]]:
     specs = {}
     for raw_task, rows in raw["tasks"].items():
         patch, race = raw_task.split(":", 1)
+        # The source manifest also contains legacy/non-SC2 labels and localized
+        # race strings.  They have no compatible live semantic role contract.
+        if race not in SUPPORTED_RACES:
+            continue
         seen, vocab = set(), []
         for row in rows:
             record = {"actor": row["actor"], "target_kind": row["target_kind"], "target_type": row["target_name"],
