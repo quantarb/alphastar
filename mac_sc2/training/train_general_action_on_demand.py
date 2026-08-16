@@ -8,11 +8,11 @@ import sc2reader
 import torch
 from torch.nn import functional as F
 
-from general_action_checkpoint import metadata
-from general_action_policy import GeneralActionPolicy
-from general_action_registry import ActionRegistry
-from semantic_action_schema import ACTOR_ROLES, TARGET_KINDS
-from train_general_macro_on_demand import cat, event_pid, vec
+from mac_sc2.legacy.general_action_checkpoint import metadata
+from mac_sc2.legacy.general_action_policy import GeneralActionPolicy
+from mac_sc2.legacy.general_action_registry import ActionRegistry
+from mac_sc2.contracts.semantic_schema import ACTOR_ROLES, TARGET_KINDS
+from mac_sc2.training.train_general_macro_on_demand import cat, event_pid, vec
 
 
 def norm_point(location):

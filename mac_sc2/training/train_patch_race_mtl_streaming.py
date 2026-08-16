@@ -7,8 +7,8 @@ from pathlib import Path
 import torch
 from torch.nn import functional as F
 
-from patch_race_mtl_policy import PatchRaceMTLPolicy
-from train_patch_race_mtl_on_demand import patch_family, replay_rows
+from mac_sc2.legacy.patch_race_mtl_policy import PatchRaceMTLPolicy
+from mac_sc2.training.train_patch_race_mtl_on_demand import patch_family, replay_rows
 
 
 def main():

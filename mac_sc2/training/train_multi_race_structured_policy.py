@@ -5,7 +5,7 @@ from pathlib import Path
 import torch
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
-from multi_race_policy import MultiRaceSC2Policy
+from mac_sc2.legacy.multi_race_policy import MultiRaceSC2Policy
 
 ROOT = Path(__file__).resolve().parents[1]
 

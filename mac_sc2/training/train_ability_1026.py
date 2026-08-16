@@ -4,7 +4,7 @@ import argparse,json
 from pathlib import Path
 import numpy as np,torch
 from torch.nn import functional as F
-from alphastar_sized_compact_policy import AlphaStarSizedCompactPolicy
+from mac_sc2.legacy.alphastar_sized_compact_policy import AlphaStarSizedCompactPolicy
 def main():
  p=argparse.ArgumentParser();p.add_argument('--shards',required=True);p.add_argument('--output',required=True);p.add_argument('--batch-size',type=int,default=128);a=p.parse_args();root=Path(a.shards);meta=json.loads((root/'manifest.json').read_text());device=torch.device('mps' if torch.backends.mps.is_available() else 'cpu');m=AlphaStarSizedCompactPolicy().to(device);o=torch.optim.AdamW(m.parameters(),lr=3e-4,weight_decay=.02);seen=ok=0
  for f in sorted(root.glob('shard_*.npz')):

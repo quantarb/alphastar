@@ -8,11 +8,11 @@ import sc2reader
 import torch
 from torch.nn import functional as F
 
-from multirace_general_policy import MultiRaceGeneralMacroPolicy, RACES
-from semantic_action_schema import ACTOR_ROLES, FAMILIES, PAYLOAD_ROLES, TARGET_KINDS, from_event
-from semantic_transfer_policy import SemanticTransferPolicy, metadata
-from train_general_macro_on_demand import RID, cat, event_pid, vec
-from semantic_action_contract import spec_hash, supports
+from mac_sc2.legacy.multirace_general_policy import MultiRaceGeneralMacroPolicy, RACES
+from mac_sc2.contracts.semantic_schema import ACTOR_ROLES, FAMILIES, PAYLOAD_ROLES, TARGET_KINDS, from_event
+from mac_sc2.legacy.semantic_transfer_policy import SemanticTransferPolicy, metadata
+from mac_sc2.training.train_general_macro_on_demand import RID, cat, event_pid, vec
+from mac_sc2.legacy.semantic_action_contract import spec_hash, supports
 
 INDEX = {"actor": {x: i for i, x in enumerate(ACTOR_ROLES)}, "family": {x: i for i, x in enumerate(FAMILIES)},
          "payload": {x: i for i, x in enumerate(PAYLOAD_ROLES)}, "target": {x: i for i, x in enumerate(TARGET_KINDS)}}

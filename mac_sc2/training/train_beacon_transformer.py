@@ -5,7 +5,7 @@ from pathlib import Path
 import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
-from beacon_policy import GRID, BeaconTransformer, encode_position
+from mac_sc2.legacy.beacon_policy import GRID, BeaconTransformer, encode_position
 
 
 def main():

@@ -9,7 +9,7 @@ from sc2.ids.ability_id import AbilityId
 from mac_sc2.architectures.patch_race_rich_mtl import PatchRaceRichMTLPolicy
 from mac_sc2.contracts.entity_snapshot import snapshot_hash
 from mac_sc2.contracts.patch_race_mtl import all_spec_hashes, build_specs, task_key
-from mac_sc2.macro_decoder_config import RACE_CONFIG
+from mac_sc2.runtime.macro_decoder_config import RACE_CONFIG
 from mac_sc2.runtime.entity_snapshot import encode
 from mac_sc2.runtime.placement_candidates import candidates
 

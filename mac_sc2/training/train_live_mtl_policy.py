@@ -6,7 +6,7 @@ from pathlib import Path
 import torch
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, Dataset
-from live_mtl_policy import LiveMTLPolicy
+from mac_sc2.legacy.live_mtl_policy import LiveMTLPolicy
 
 class Rows(Dataset):
     def __init__(self, rows): self.rows = rows

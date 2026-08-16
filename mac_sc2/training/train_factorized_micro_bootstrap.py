@@ -12,8 +12,8 @@ from pathlib import Path
 import torch
 from torch.nn import functional as F
 
-from factorized_micro_policy import FactorizedMicroPolicy, TACTICAL_FEATURES, checkpoint_metadata
-from multirace_general_policy import MultiRaceGeneralMacroPolicy
+from mac_sc2.legacy.factorized_micro_policy import FactorizedMicroPolicy, TACTICAL_FEATURES, checkpoint_metadata
+from mac_sc2.legacy.multirace_general_policy import MultiRaceGeneralMacroPolicy
 
 
 def combat_teacher(n: int, device: torch.device):

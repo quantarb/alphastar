@@ -3,7 +3,7 @@ from collections import defaultdict
 import sc2reader
 from mac_sc2.contracts.semantic import RACE_IDS, supports
 from mac_sc2.data.events import event_pid
-from mac_sc2.semantic_action_schema import from_event
+from mac_sc2.contracts.semantic_schema import from_event
 
 WORDS=[('scv','probe','drone'),('supplydepot','pylon','overlord'),('barracks','gateway','spawningpool'),('refinery','assimilator','extractor'),('cybernetics','robotics','stargate','forge','engineeringbay','armory','factory','spire','hydraliskden','roachwarren'),('marine','zealot','zergling'),('stalker','adept','sentry','roach','hydralisk','marauder','hellion'),('immortal','colossus','disruptor','templar','carrier','voidray','phoenix','siegetank','medivac','mutalisk','lurker')]
 def cat(name):

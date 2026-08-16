@@ -16,7 +16,7 @@ from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 import sc2reader
 
-from train_replay_transformer import (
+from mac_sc2.training.train_replay_transformer import (
     BOS, PAD, UNK, ReplayTransformer, make_examples,
 )
 

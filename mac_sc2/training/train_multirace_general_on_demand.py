@@ -5,8 +5,8 @@ from collections import Counter
 from pathlib import Path
 import torch
 from torch.nn import functional as F
-from multirace_general_policy import MultiRaceGeneralMacroPolicy,RACES
-from train_general_macro_on_demand import rows
+from mac_sc2.legacy.multirace_general_policy import MultiRaceGeneralMacroPolicy,RACES
+from mac_sc2.training.train_general_macro_on_demand import rows
 
 def main():
  ap=argparse.ArgumentParser();ap.add_argument('--manifest',required=True);ap.add_argument('--output',required=True);ap.add_argument('--resume');ap.add_argument('--start-game',type=int,default=0);ap.add_argument('--max-games',type=int,default=1000);ap.add_argument('--batch-size',type=int,default=512);ap.add_argument('--window',type=int,default=8);ap.add_argument('--lr',type=float,default=8e-4);ap.add_argument('--patch',help='Restrict to one replay patch family, e.g. 4.9.2');ap.add_argument('--checkpoint-every',type=int,default=0);ap.add_argument('--winner-only',action='store_true');a=ap.parse_args()

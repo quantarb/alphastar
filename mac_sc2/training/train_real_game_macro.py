@@ -5,7 +5,7 @@ import random
 import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
-from real_game_macro import MacroTransformer, encode_state, teacher_action
+from mac_sc2.legacy.real_game_macro import MacroTransformer, encode_state, teacher_action
 
 
 def main():

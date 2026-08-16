@@ -4,7 +4,7 @@ from pathlib import Path
 import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
-from micro_policy import MicroTransformer
+from mac_sc2.legacy.micro_policy import MicroTransformer
 
 torch.manual_seed(7)
 n = 50000

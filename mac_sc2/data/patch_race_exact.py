@@ -8,7 +8,7 @@ import sc2reader
 from mac_sc2.contracts.entity_snapshot import ENTITY_SLOTS
 from mac_sc2.contracts.patch_race_mtl import task_key, tuple_record
 from mac_sc2.data.semantic_replay import cat, vec
-from mac_sc2.semantic_action_schema import from_event
+from mac_sc2.contracts.semantic_schema import from_event
 
 TOWN_HALL = ("commandcenter", "orbitalcommand", "planetaryfortress", "nexus", "hatchery", "lair", "hive")
 

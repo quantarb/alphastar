@@ -4,7 +4,7 @@ import argparse, json
 from pathlib import Path
 import numpy as np, torch
 from torch.nn import functional as F
-from hierarchical_mtl_policy import HierarchicalMTLPolicy
+from mac_sc2.legacy.hierarchical_mtl_policy import HierarchicalMTLPolicy
 
 def tensors(part, device):
     n=len(part['label']); units=torch.from_numpy(part['units'].astype(np.int64)); frame=torch.from_numpy(part['frame'].astype(np.float32)/65535); hist=torch.from_numpy(part['history'].astype(np.float32)/6)

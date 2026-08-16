@@ -4,7 +4,7 @@ from pathlib import Path
 import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
-from current_patch_transformer import ACTIONS, CurrentPatchTransformer
+from mac_sc2.legacy.current_patch_transformer import ACTIONS, CurrentPatchTransformer
 
 ROOT = Path(__file__).resolve().parents[1]
 data = torch.load(ROOT / 'mac_sc2/artifacts/current_patch_teacher_trajectories.pt', weights_only=False)

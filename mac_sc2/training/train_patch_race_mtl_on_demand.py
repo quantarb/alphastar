@@ -15,8 +15,8 @@ import sc2reader
 import torch
 from torch.nn import functional as F
 
-from patch_race_mtl_policy import PatchRaceMTLPolicy
-from train_general_macro_on_demand import RID, cat, event_pid, vec
+from mac_sc2.legacy.patch_race_mtl_policy import PatchRaceMTLPolicy
+from mac_sc2.training.train_general_macro_on_demand import RID, cat, event_pid, vec
 
 IGNORED = {"", "RightClick", "SetWorkerRally", "SetRallyPoint", "Stop", "HoldPosition"}
 

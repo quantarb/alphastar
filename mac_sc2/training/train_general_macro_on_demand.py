@@ -5,7 +5,7 @@ from collections import Counter,defaultdict
 from pathlib import Path
 import sc2reader,torch
 from torch.nn import functional as F
-from general_macro_policy import GeneralMacroPolicy,RACES
+from mac_sc2.legacy.general_macro_policy import GeneralMacroPolicy,RACES
 RID={r:i for i,r in enumerate(RACES)}
 WORDS=[('scv','probe','drone'),('supplydepot','pylon','overlord'),('barracks','gateway','spawningpool'),('refinery','assimilator','extractor'),('cybernetics','robotics','stargate','forge','engineeringbay','armory','factory','spire','hydraliskden','roachwarren'),('marine','zealot','zergling'),('stalker','adept','sentry','roach','hydralisk','marauder','hellion'),('immortal','colossus','disruptor','templar','carrier','voidray','phoenix','siegetank','medivac','mutalisk','lurker'),('commandcenter','nexus','hatchery','lair','hive')]
 def has(n,words):return any(x in n for x in words)

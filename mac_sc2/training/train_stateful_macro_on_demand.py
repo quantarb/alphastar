@@ -10,7 +10,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 import sc2reader, torch
 from torch.nn import functional as F
-from stateful_macro_policy import StatefulMacroPolicy, RACES, STATE_SIZE
+from mac_sc2.legacy.stateful_macro_policy import StatefulMacroPolicy, RACES, STATE_SIZE
 
 RACE_ID = {r: i for i, r in enumerate(RACES)}
 WORKERS = ("scv", "probe", "drone")

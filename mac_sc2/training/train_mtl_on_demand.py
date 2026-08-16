@@ -5,7 +5,7 @@ from collections import deque
 from pathlib import Path
 import sc2reader,torch
 from torch.nn import functional as F
-from alphastar_sized_compact_policy import AlphaStarSizedCompactPolicy
+from mac_sc2.legacy.alphastar_sized_compact_policy import AlphaStarSizedCompactPolicy
 R={'Terran':0,'Protoss':1,'Zerg':2}
 def macro(n):
  n=(n or '').lower()
