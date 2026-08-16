@@ -12,8 +12,11 @@ def main() -> None:
     parser.add_argument("--registry", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--games", type=int)
+    parser.add_argument("--resume-checkpoint")
+    parser.add_argument("--start-game", type=int, default=0)
     args = parser.parse_args()
-    print(fine_tune(MultiTaskConfig(manifest=args.manifest, registry=args.registry, output=args.output, games=args.games)))
+    print(fine_tune(MultiTaskConfig(manifest=args.manifest, registry=args.registry, output=args.output, games=args.games,
+                                    resume_checkpoint=args.resume_checkpoint, start_game=args.start_game)))
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ from torch.nn import functional as F
 
 from mac_sc2.architectures.multitask_policy import PlayableMultiTaskPolicy
 from mac_sc2.contracts.entity_snapshot import ENTITY_SLOTS
-from mac_sc2.contracts.multitask import contract, contract_hash, task_routes
+from mac_sc2.contracts.multitask import contract, contract_hash, task_routes, validate_checkpoint
 from mac_sc2.contracts.patch_race_mtl import build_specs, validate_live_contract
 from mac_sc2.contracts.semantic_schema import FAMILIES
 from mac_sc2.data.patch_race_exact import examples as macro_examples
@@ -26,6 +26,8 @@ class MultiTaskConfig:
     output: str
     macro_resume: str = "mac_sc2/artifacts/patch_race_recent_streaming_base.pt"
     games: int | None = None
+    resume_checkpoint: str | None = None
+    start_game: int = 0
     checkpoint_every: int = 200
     learning_rate: float = 2e-4
     macro_aux_weight: float = .2
@@ -57,15 +59,30 @@ def fine_tune(config: MultiTaskConfig) -> dict:
         raise ValueError(f"need at least {config.checkpoint_every} compatible raw replays, found {len(files)}")
     if config.games is not None and len(files) != config.games:
         raise ValueError(f"need {config.games} compatible raw replays")
-    macro = torch.load(config.macro_resume, map_location="cpu", weights_only=False)
     routes = task_routes(config.registry)
-    model = PlayableMultiTaskPolicy(specs, routes); model.load_initializers(macro["state_dict"])
+    if not 0 <= config.start_game < len(files):
+        raise ValueError(f"start_game must select remaining raw replays, got {config.start_game}/{len(files)}")
+    model = PlayableMultiTaskPolicy(specs, routes)
+    resumed_from = {"micro_backbone": str(Path(config.macro_resume).resolve())}
+    prior_counts = Counter()
+    if config.resume_checkpoint:
+        resume = torch.load(config.resume_checkpoint, map_location="cpu", weights_only=False)
+        validate_checkpoint(resume, config.registry)
+        if resume.get("games") != config.start_game:
+            raise ValueError("resume checkpoint game count does not match start_game")
+        model.load_state_dict(resume["state_dict"])
+        prior_counts.update(resume.get("counts", {}))
+        resumed_from = {"checkpoint": str(Path(config.resume_checkpoint).resolve()),
+                        "games": resume["games"], "contract_hash": resume["multitask_contract_hash"]}
+    else:
+        macro = torch.load(config.macro_resume, map_location="cpu", weights_only=False)
+        model.load_initializers(macro["state_dict"])
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu"); model.to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate, weight_decay=.01)
-    counts, discarded, evaluations = Counter(), Counter(), []
+    counts, discarded, evaluations = prior_counts, Counter(), []
     family_ids = {family: index for index, family in enumerate(FAMILIES)}
     output = Path(config.output); output.parent.mkdir(parents=True, exist_ok=True)
-    for game_number, item in enumerate(files, start=1):
+    for game_number, item in enumerate(files[config.start_game:], start=config.start_game + 1):
         try:
             for row in macro_examples(item["path"], item["version"], specs, discarded):
                 state = torch.tensor([row["state"]], dtype=torch.float32, device=device)
@@ -90,11 +107,19 @@ def fine_tune(config: MultiTaskConfig) -> dict:
         except Exception as exc: discarded[type(exc).__name__] += 1
         if game_number % config.checkpoint_every == 0:
             torch.save({"state_dict": {key:value.detach().cpu() for key,value in model.state_dict().items()}, "games": game_number,
-                        "resumed_from": {"micro_backbone": str(Path(config.macro_resume).resolve())},
+                        "resumed_from": resumed_from,
                         "tasks": routes, "multitask_contract": contract(config.registry),
                         "multitask_contract_hash": contract_hash(config.registry), "validation": {"live_contract": live_contract, **validation},
                         "counts": dict(counts), "discarded": dict(discarded)}, output)
             # Easy games consume this immutable overwrite-only snapshot while training continues.
             evaluations.append(launch_easy_suite(str(output), config.registry, config.evaluation_dir))
+        if game_number % 10 == 0:
+            print(f"trained_games={game_number} labels={counts['micro']}", flush=True)
+    # Preserve the final all-games continuation in the one overwrite-only file.
+    if game_number % config.checkpoint_every:
+        torch.save({"state_dict": {key:value.detach().cpu() for key,value in model.state_dict().items()}, "games": game_number,
+                    "resumed_from": resumed_from, "tasks": routes, "multitask_contract": contract(config.registry),
+                    "multitask_contract_hash": contract_hash(config.registry), "validation": {"live_contract": live_contract, **validation},
+                    "counts": dict(counts), "discarded": dict(discarded)}, output)
     return {"checkpoint": str(output.resolve()), "counts": dict(counts), "validation": {"live_contract": live_contract, **validation},
             "evaluation_processes": evaluations}
