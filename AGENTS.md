@@ -4,6 +4,14 @@ This workspace exists to produce an AI that can be watched playing StarCraft II.
 Treat a model as useful only when it can be loaded by a live SC2 runner and
 issue valid game actions.
 
+## Required Python environment
+
+Use the project Conda environment at `.conda-alphastar` for every import,
+validation, training, and live-match command.  Invoke it explicitly as
+`.conda-alphastar/bin/python`; do not create or use a project virtualenv or a
+different Python version for this pipeline.  Verify `torch`, `sc2`, and
+`sc2reader` import successfully before beginning runnable-pipeline work.
+
 ## Non-negotiable delivery rule
 
 Do **not** start or continue training a model unless all of the following are

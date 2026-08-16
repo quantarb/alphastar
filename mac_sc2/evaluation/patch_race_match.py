@@ -20,15 +20,21 @@ def run_match(checkpoint: str, registry: str, race: str, difficulty: str, replay
     bot.result_path = str(result_path)
     result = run_game(maps.get("Simple64"), [Bot(getattr(Race, race.title()), bot), Computer(Race.Zerg, getattr(Difficulty, difficulty.title()))], realtime=False, save_replay_as=str(replay_path))
     record = {"checkpoint": str(Path(checkpoint).resolve()), "race": race, "difficulty": difficulty,
-              "result": str(result), "replay": str(replay_path)}
+              "result": str(result), "replay": str(replay_path), "telemetry": dict(bot.telemetry)}
     result_path.write_text(json.dumps(record, indent=2))
     return record
 
 
-def launch_easy_suite(checkpoint: str, registry: str, output_dir: str | Path) -> list[Process]:
-    processes = []
+def run_easy_suite(checkpoint: str, registry: str, output_dir: str | Path) -> list[dict]:
+    """Run races serially: SC2 clients cannot safely share auto-selected ports."""
+    records = []
     for race in ("terran", "protoss", "zerg"):
         replay = Path(output_dir) / f"{Path(checkpoint).stem}_{race}_easy.SC2Replay"
-        process = Process(target=run_match, args=(checkpoint, registry, race, "easy", str(replay)))
-        process.start(); processes.append(process)
-    return processes
+        records.append(run_match(checkpoint, registry, race, "easy", str(replay)))
+    return records
+
+
+def launch_easy_suite(checkpoint: str, registry: str, output_dir: str | Path) -> Process:
+    process = Process(target=run_easy_suite, args=(checkpoint, registry, output_dir))
+    process.start()
+    return process

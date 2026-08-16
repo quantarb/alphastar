@@ -35,9 +35,8 @@ def _point(unit):
 def _snapshot(units, pid, home):
     rows, ids = [], []
     for key, (unit, owner, position) in sorted(units.items())[:ENTITY_SLOTS]:
-        if owner != pid: continue
         name = _name(unit).lower(); health=float(getattr(unit, "health", 0) or 0); maximum=float(getattr(unit, "health_max", 0) or 0)
-        rows.append((zlib.crc32(_name(unit).encode()) % 65535 / 65535, (position[0]-home[0])/64, (position[1]-home[1])/64, 1., health/max(maximum,1), float(getattr(unit,"build_progress",1) or 1), float(getattr(unit,"is_flying",False)), float(any(word in name for word in ("scv","probe","drone")))))
+        rows.append((zlib.crc32(_name(unit).encode()) % 65535 / 65535, (position[0]-home[0])/64, (position[1]-home[1])/64, float(owner == pid), health/max(maximum,1), float(getattr(unit,"build_progress",1) or 1), float(getattr(unit,"is_flying",False)), float(any(word in name for word in ("scv","probe","drone")))))
         ids.append(key)
         if len(rows) == ENTITY_SLOTS: break
     return rows, ids
@@ -48,9 +47,9 @@ def registry_indices(specs):
         result[task] = {tuple(sorted(row.items())): index for index, row in enumerate(vocab)}
     return result
 
-def examples(path, version, specs, stats=None):
+def examples(path, version, specs, stats=None, history_size=16):
     replay=sc2reader.load_replay(path,load_level=4); races={p.pid:p.play_race for p in replay.players}
-    latest={}; counts=defaultdict(lambda:[0]*8); selected=defaultdict(list); groups=defaultdict(dict); units={}; homes={}; indices=registry_indices(specs); discarded=Counter()
+    latest={}; counts=defaultdict(lambda:[0]*8); selected=defaultdict(list); groups=defaultdict(dict); units={}; homes={}; indices=registry_indices(specs); discarded=Counter(); histories=defaultdict(list)
     for event in replay.events:
         pid=event_owner(event); typ=type(event).__name__
         if typ in ("UnitBornEvent","UnitInitEvent","UnitDoneEvent","UnitTypeChangeEvent"):
@@ -85,9 +84,9 @@ def examples(path, version, specs, stats=None):
         if label is None: discarded["ambiguous_or_unexecutable"]+=1; continue
         snapshot, ids=_snapshot(units,pid,homes[pid])
         if not snapshot: discarded["empty_snapshot"]+=1; continue
-        target=_id(getattr(event,"target",None)); actor=next((ids.index(x) for x in selected[pid] if x in ids),None)
-        target_index=ids.index(target) if target in ids else -1
         location=getattr(event,"location",None)
-        yield {"task":task,"state":vec(latest[pid],counts[pid],getattr(event,"second",0)),"snapshot":snapshot,"tuple_id":label,"actor":-1 if actor is None else actor,"target":target_index,"location":None if not location else ((float(location[0])-homes[pid][0])/64,(float(location[1])-homes[pid][1])/64)}
+        history = list(histories[task][-history_size:])
+        histories[task].append(label)
+        yield {"task":task,"state":vec(latest[pid],counts[pid],getattr(event,"second",0)),"snapshot":snapshot,"tuple_id":label,"history":history,"location":None if not location else ((float(location[0])-homes[pid][0])/64,(float(location[1])-homes[pid][1])/64)}
     if stats is not None: stats.update(discarded)
     return discarded

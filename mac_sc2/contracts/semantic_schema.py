@@ -55,7 +55,6 @@ def actor_role(selected_names):
 def family(ability_name):
     name = (ability_name or "").lower()
     if "repair" in name: return "repair"
-    if "attack" in name: return "attack"
     if name.startswith("move") or "move" in name: return "move"
     if "hold" in name or name == "stop" or "stop" in name: return "hold_stop"
     if "patrol" in name: return "patrol"
@@ -64,6 +63,7 @@ def family(ability_name):
     if "rally" in name: return "rally"
     if "load" in name or "unload" in name: return "transport"
     if "research" in name or "upgrade" in name: return "research"
+    if "attack" in name: return "attack"
     if name.startswith("build") or "construct" in name: return "build"
     if name.startswith("train") or name.startswith("morph") or name.startswith("warpin"): return "train_morph"
     return "cast" if name else "other"
