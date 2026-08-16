@@ -1,0 +1,22 @@
+<main id="training-dashboard">
+  <h1>Patch/Race MTL Training</h1>
+  <p id="state">Waiting for status…</p>
+  <dl>
+    <div><dt>Replays</dt><dd id="games">—</dd></div>
+    <div><dt>Player decisions</dt><dd id="decisions">—</dd></div>
+    <div><dt>Task heads</dt><dd id="tasks">—</dd></div>
+    <div><dt>Training accuracy</dt><dd id="accuracy">—</dd></div>
+    <div><dt>Elapsed</dt><dd id="elapsed">—</dd></div>
+  </dl>
+  <progress id="progress" value="0" max="1"></progress>
+  <p id="task-list"></p>
+</main>
+<style>
+#training-dashboard{font:16px system-ui,sans-serif;max-width:700px;margin:40px auto;color:#e8eef7;background:#121923;padding:28px;border-radius:14px}h1{margin-top:0}dl{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}dl div{background:#1d2836;padding:14px;border-radius:8px}dt{color:#9db0c7;font-size:13px}dd{margin:6px 0 0;font-size:22px;font-weight:650}progress{width:100%;height:20px}#task-list{color:#b9c7d6;line-height:1.5}
+</style>
+<script>
+const root=document.getElementById('training-dashboard');
+const el=id=>root.querySelector('#'+id);
+const seconds=n=>{n=Math.round(n||0);return `${Math.floor(n/60)}m ${n%60}s`};
+async function update(){try{const s=await fetch('training-status.json?'+Date.now()).then(r=>r.json());el('state').textContent=s.state==='complete'?'Complete':'Training';el('games').textContent=`${s.games_completed.toLocaleString()} / ${s.games_total.toLocaleString()}`;el('decisions').textContent=s.decisions.toLocaleString();el('tasks').textContent=s.tasks;el('accuracy').textContent=(s.accuracy*100).toFixed(1)+'%';el('elapsed').textContent=seconds(s.elapsed_seconds);el('progress').value=s.games_completed/s.games_total;el('task-list').textContent=s.task_names.join(' · ')}catch(e){el('state').textContent='Waiting for training status…'}}update();setInterval(update,3000);
+</script>
