@@ -53,20 +53,27 @@ def rows(path, patch):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--manifest", required=True); parser.add_argument("--macro-checkpoint", required=True)
+    parser.add_argument("--resume", default="mac_sc2/artifacts/semantic_contract_all_replays.pt",
+                        help="Compatible semantic checkpoint to fine-tune; random initialization is not permitted")
     parser.add_argument("--output", required=True); parser.add_argument("--max-games", type=int, default=36910)
     parser.add_argument("--batch-size", type=int, default=512); parser.add_argument("--lr", type=float, default=3e-4)
     parser.add_argument("--checkpoint-every", type=int, default=200)
     args = parser.parse_args()
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
     base = MultiRaceGeneralMacroPolicy(); base.load_state_dict(torch.load(args.macro_checkpoint, map_location="cpu", weights_only=False)["state_dict"])
-    model = SemanticTransferPolicy(base.shared).to(device)
+    model = SemanticTransferPolicy(base.shared)
+    resume = torch.load(args.resume, map_location="cpu", weights_only=False)
+    if resume.get("action_contract_hash") != spec_hash():
+        raise ValueError("resume checkpoint ActionSpec is incompatible with the live semantic decoder")
+    model.load_state_dict(resume["state_dict"])
+    model = model.to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=.01)
     files = json.loads(Path(args.manifest).read_text())["valid"][:args.max_games]
     seen, correct = 0, Counter()
     def save(games):
         state = {key: value.detach().cpu() for key, value in model.state_dict().items()}
         Path(args.output).parent.mkdir(parents=True, exist_ok=True)
-        torch.save({"state_dict": state, "games": games, "macro_checkpoint": args.macro_checkpoint,
+        torch.save({"state_dict": state, "games": games, "macro_checkpoint": args.macro_checkpoint, "resumed_from": args.resume,
                     "decisions": seen, "action_contract_hash": spec_hash(),
                     "training_source": "raw replay semantic factors streamed on demand", **metadata()}, args.output)
     for game, item in enumerate(files, 1):

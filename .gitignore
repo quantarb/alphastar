@@ -108,6 +108,7 @@ celerybeat.pid
 # Environments
 .env
 .venv
+.conda-*/
 env/
 venv/
 ENV/
@@ -137,6 +138,12 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+# Local SC2 development outputs
+.idea/
+local_data/
+mac_sc2/artifacts/
+mac_sc2/training-status.json
 
 # static files generated from Django application using `collectstatic`
 media

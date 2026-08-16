@@ -38,6 +38,24 @@ For every playable-agent training run:
    and the replay path. Never infer gameplay success from classification
    accuracy.
 
+## Initialization and fine-tuning
+
+- Do **not** train a new policy from random initialization. Every training run
+  must resume or fine-tune from a compatible, versioned checkpoint unless the
+  user explicitly authorizes training from scratch in that request.
+- Before resuming, verify the source checkpoint's architecture, ActionSpec
+  hash, snapshot/state contract, and live runner compatibility. Refuse an
+  incompatible initializer rather than partially loading weights.
+- The default cross-patch macro initializer is
+  `mac_sc2/artifacts/semantic_contract_all_replays.pt`: it was trained from
+  raw replays across patches and its semantic ActionSpec is executable by
+  `mac_sc2/play_semantic_transfer.py`. Record it in new checkpoint metadata
+  as `resumed_from`.
+- Fine-tuning may add only heads with a complete live decoder and shared input
+  contract. Preserve compatible learned components (for example a legal-tile
+  ranker or entity-pointer repair head); do not reset them merely to start a
+  new interval.
+
 ## Patch and action validity
 
 - The installed playable client is SC2 4.9.2 (`Base97563`).

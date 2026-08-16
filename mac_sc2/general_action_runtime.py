@@ -12,7 +12,9 @@ def actor_candidates(bot, role):
     if role == "worker": return bot.workers
     if role == "production": return bot.structures
     if role == "transport": return all_units.filter(lambda u: u.cargo_max > 0)
-    if role == "combat": return bot.units.filter(lambda u: u.can_attack and not u.is_worker)
+    if role == "combat":
+        worker_tags = {unit.tag for unit in bot.workers}
+        return bot.units.filter(lambda u: u.can_attack and u.tag not in worker_tags)
     return all_units
 
 
