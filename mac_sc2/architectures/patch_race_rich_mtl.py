@@ -5,7 +5,7 @@ import re
 import torch
 from torch import nn
 
-from mac_sc2.architectures.semantic_macro import STATE_SIZE
+STATE_SIZE = 17  # Live macro feature contract: see PatchRaceBot.feat().
 
 
 def module_key(task: str) -> str:

@@ -5,7 +5,10 @@ from mac_sc2.contracts.repair import RepairAction
 
 async def issue_learned_repair(bot, model, entities, mask, units):
     """Use model-ranked eligible SCVs and damaged friendly targets only."""
-    workers={u.tag for u in bot.workers}; damaged=torch.tensor([u.health < u.health_max for u in units],dtype=torch.bool)
+    workers={u.tag for u in bot.workers}
+    # Incomplete construction is expected to have partial health; do not let
+    # repair preempt macro simply because a building is still being built.
+    damaged=torch.tensor([u.build_progress >= 1 and u.health < u.health_max for u in units],dtype=torch.bool)
     if not workers or not damaged.any(): return False
     available=await bot.get_available_abilities([u for u in units if u.tag in workers])
     usable={u.tag for u,abilities in zip([u for u in units if u.tag in workers],available) if AbilityId(RepairAction().ability_id) in abilities}

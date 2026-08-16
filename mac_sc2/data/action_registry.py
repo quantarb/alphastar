@@ -13,7 +13,7 @@ import multiprocessing as mp
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from extract_semantic_replay_actions import actions_for_replay
+from mac_sc2.data.semantic_actions import actions_for_replay
 
 
 def scan_replay(item):

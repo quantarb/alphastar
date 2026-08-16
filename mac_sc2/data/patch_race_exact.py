@@ -7,8 +7,17 @@ import sc2reader
 
 from mac_sc2.contracts.entity_snapshot import ENTITY_SLOTS
 from mac_sc2.contracts.patch_race_mtl import task_key, tuple_record
-from mac_sc2.data.semantic_replay import cat, vec
 from mac_sc2.contracts.semantic_schema import from_event
+
+WORDS=[('scv','probe','drone'),('supplydepot','pylon','overlord'),('barracks','gateway','spawningpool'),('refinery','assimilator','extractor'),('cybernetics','robotics','stargate','forge','engineeringbay','armory','factory','spire','hydraliskden','roachwarren'),('marine','zealot','zergling'),('stalker','adept','sentry','roach','hydralisk','marauder','hellion'),('immortal','colossus','disruptor','templar','carrier','voidray','phoenix','siegetank','medivac','mutalisk','lurker')]
+
+def cat(name):
+    text=(name or '').lower(); return [int(any(word in text for word in group)) for group in WORDS]
+
+def vec(stats, counts, second):
+    minerals=getattr(stats,'minerals_current',0); gas=getattr(stats,'vespene_current',0); used=getattr(stats,'food_used',0); made=getattr(stats,'food_made',0)
+    workers=max(getattr(stats,'workers_active_count',0),counts[0])
+    return [min(second/900,1),min(minerals/1500,1),min(gas/1000,1),min(used/200,1),min(made/200,1),min(max(made-used,0)/30,1),min(workers/80,1),*[min(x/20,1) for x in counts[1:]],min(getattr(stats,'minerals_collection_rate',0)/2500,1),min(getattr(stats,'vespene_collection_rate',0)/1500,1),min(getattr(stats,'resources_lost',0)/10000,1)]
 
 TOWN_HALL = ("commandcenter", "orbitalcommand", "planetaryfortress", "nexus", "hatchery", "lair", "hive")
 

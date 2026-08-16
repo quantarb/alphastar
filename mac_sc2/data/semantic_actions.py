@@ -12,8 +12,11 @@ from pathlib import Path
 
 import sc2reader
 
-from semantic_action_schema import from_event
-from train_general_macro_on_demand import event_pid
+from mac_sc2.contracts.semantic_schema import from_event
+
+
+def event_pid(event):
+    return getattr(getattr(event, "player", None), "pid", None)
 
 
 def actions_for_replay(path, patch):
