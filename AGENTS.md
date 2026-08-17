@@ -66,17 +66,17 @@ For every playable-agent training run:
 
 ## Patch and action validity
 
-- The installed playable client is SC2 4.9.2 (`Base97563`).
+- The installed playable client is SC2 5.0.16.97563 (`Base97563`).
 - The runnable policy and live evaluation apply **only** to this installed
   current patch.  Historical-patch replay work is explicitly research-only:
   it may train task-local offline heads or a shared representation, but those
   heads must never be loaded by, evaluated as, or described as a live policy.
 - A model run in this client may emit only actions executable by its runner on
-  4.9.2.
+  5.0.16.97563.
 - Patch/race MTL is allowed only if every patch/race task still has a complete
   executable decoder. A task-local ability vocabulary by itself is not a
   playable agent.
-- Do not claim that a cross-patch head is playable in 4.9.2.
+- Do not claim that a cross-patch head is playable in 5.0.16.97563.
 
 ## Training–prediction action contract
 
@@ -91,7 +91,7 @@ extraction, model labels, checkpoint metadata, and the live SC2 decoder.
 3. A checkpoint must store the action-contract hash. The runner must refuse
    to load a checkpoint whose hash differs from its own contract.
 4. Before any training starts, automatically validate that every permitted
-   tuple has a patch-valid 4.9.2 decoder and legality predicate.
+   tuple has a patch-valid 5.0.16.97563 decoder and legality predicate.
 5. Extending the action space is always ordered as: implement decoder and
    legality guard -> update ActionSpec -> validate -> train. Never train a
    head first and promise decoder support later.

@@ -7,11 +7,43 @@ from pathlib import Path
 import torch
 from sc2.bot_ai import BotAI
 from sc2.ids.upgrade_id import UpgradeId
+from sc2.position import Point2
+from sc2.unit import UnitOrder
 
 from mac_sc2.architectures.semantic_action_mtl import SemanticActionMTL
 from mac_sc2.contracts.semantic_action import spec_hash, supports
 from mac_sc2.contracts.semantic_schema import ACTOR_ROLES, FAMILIES, PAYLOAD_ROLES
 from mac_sc2.runtime.macro_decoder_config import RACE_CONFIG, RACE_IDS
+
+
+class _UnknownObservedAbility:
+    """Observation-only placeholder for an ability newer than python-sc2's enum."""
+    def __init__(self, ability_id: int): self.ability_id = ability_id
+    def __repr__(self) -> str: return f"UnknownObservedAbility({self.ability_id})"
+    @property
+    def id(self) -> int: return self.ability_id
+    @property
+    def exact_id(self) -> int: return self.ability_id
+
+
+_unit_order_from_proto = UnitOrder.from_proto.__func__
+
+
+def _safe_unit_order_from_proto(cls, proto, bot_object):
+    """Do not crash on a new *observed* order that this wrapper cannot name.
+
+    This path does not authorize or emit that ability: decoded policy commands
+    still come solely from the explicit action contract below.
+    """
+    try:
+        return _unit_order_from_proto(cls, proto, bot_object)
+    except KeyError:
+        target = Point2.from_proto(proto.target_world_space_pos) if proto.HasField("target_world_space_pos") else (
+            proto.target_unit_tag if proto.HasField("target_unit_tag") else None)
+        return cls(_UnknownObservedAbility(proto.ability_id), target, proto.progress)
+
+
+UnitOrder.from_proto = classmethod(_safe_unit_order_from_proto)
 
 
 class SemanticActionBot(BotAI):

@@ -5,6 +5,9 @@ import hashlib
 import json
 from dataclasses import dataclass
 
+# The executable decoder is tested only against this installed SC2 build.
+PATCH = "5.0.16.97563"
+
 
 @dataclass(frozen=True)
 class SemanticAction:
@@ -39,5 +42,6 @@ def supports(actor: str, family: str, payload: str, target: str) -> bool:
 
 
 def spec_hash() -> str:
-    body = json.dumps([x.__dict__ for x in ACTIONS], sort_keys=True, separators=(",", ":"))
+    body = json.dumps({"patch": PATCH, "actions": [x.__dict__ for x in ACTIONS]},
+                      sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(body.encode()).hexdigest()[:16]

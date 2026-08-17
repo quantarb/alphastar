@@ -15,6 +15,7 @@ from sc2.ids.ability_id import AbilityId
 from mac_sc2.architectures.multitask_policy import PlayableMultiTaskPolicy
 from mac_sc2.contracts.multitask import task_routes, validate_checkpoint as validate_multitask
 from mac_sc2.contracts.patch_race_mtl import build_specs, task_key
+from mac_sc2.contracts.semantic_schema import FAMILIES
 from mac_sc2.runtime.entity_snapshot import encode
 from mac_sc2.runtime.macro_decoder_config import RACE_CONFIG
 from mac_sc2.runtime.placement_candidates import candidates
@@ -26,17 +27,25 @@ HISTORY_SIZE = 16
 class PatchRaceBot(BotAI):
     """Decoder that fail-closes before issuing any non-live-valid command."""
 
-    def __init__(self, checkpoint: str, registry: str, race: str, smoke_steps: int | None = None):
+    def __init__(self, checkpoint: str, registry: str, race: str, smoke_steps: int | None = None,
+                 decision_head: str = "micro"):
         super().__init__()
         self.race_name = race.title()
         self.smoke_steps = smoke_steps
+        if decision_head not in ("micro", "macro"):
+            raise ValueError(f"unknown decision head: {decision_head}")
+        self.decision_head = decision_head
         self.task = task_key(PATCH, self.race_name)
         self.specs = build_specs(registry)
         data = torch.load(checkpoint, map_location="cpu", weights_only=False)
         validate_multitask(data, registry)
         self.routes = task_routes(registry)
         self.model = PlayableMultiTaskPolicy(self.specs, self.routes)
-        self.model.load_state_dict(data["state_dict"])
+        # Unified checkpoints may retain historical auxiliary heads. They are
+        # intentionally absent from the live model and cannot affect decoding.
+        live_state = {key: value for key, value in data["state_dict"].items()
+                      if not key.startswith("historical_")}
+        self.model.load_state_dict(live_state)
         self.model.eval()
         self.c = RACE_CONFIG[race.lower()]
         self.history: list[int] = []
@@ -169,6 +178,15 @@ class PatchRaceBot(BotAI):
             return
         with torch.no_grad():
             logits = self.model.micro_logits(self.feat(), PATCH, self.race_name, self.history_tensor())[0]
+            if self.decision_head == "macro":
+                family_id = int(self.model.macro_logits(self.feat(), PATCH, self.race_name)[0].argmax())
+                family = FAMILIES[family_id]
+                routed = [index for index in legal if self.specs[self.task][index]["family"] == family]
+                if routed:
+                    legal = routed
+                    self.telemetry[f"macro_family_{family}"] += 1
+                else:
+                    self.telemetry["macro_no_legal_family"] += 1
         for index in sorted(legal, key=lambda item: float(logits[item]), reverse=True):
             if await self.issue(self.specs[self.task][index]):
                 self.history.append(index)
