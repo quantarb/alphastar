@@ -21,6 +21,15 @@ class RichTransformerBot(TerranEntityARBot):
     def __init__(self, checkpoint: str | None = None, smoke_steps: int | None = None, target_mmr: int = 4500):
         super().__init__(checkpoint=None, smoke_steps=smoke_steps)
         self.target_mmr = target_mmr
+        # The tick compiler has no positive ``scout`` labels yet.  Do not let
+        # an untrained intent become an always-legal fallback in a live game.
+        self.enable_tick_scout = False
+        self.scout_tag: int | None = None
+        self.scout_complete = False
+        # ``attack`` is a group command in the executor.  A one-unit pointer
+        # label must never be allowed to turn into a stream of lone attacks.
+        self.attack_min_units = 6
+        self.attack_group_tags: set[int] = set()
         validate_live_contract()
         if checkpoint:
             data = torch.load(checkpoint, map_location="cpu", weights_only=False)
@@ -78,9 +87,54 @@ class RichTransformerBot(TerranEntityARBot):
             return "train_marine" if await self._issue_prerequisite("train_marine") else None
         return None
 
+    def _refresh_scout(self) -> None:
+        """Close a scout assignment after arrival or loss; never stack scouts."""
+        if self.scout_tag is None or self.scout_complete:
+            return
+        scout = self.units.find_by_tag(self.scout_tag)
+        if scout is None:
+            self.scout_complete = True
+            self.telemetry["scout_lost"] += 1
+        elif scout.distance_to(self._region("enemy_start")) <= 10:
+            self.scout_complete = True
+            self.telemetry["scout_complete"] += 1
+
+    def _refresh_attack_group(self) -> None:
+        """Keep reinforcements home until the committed squad is gone."""
+        if not self.attack_group_tags:
+            return
+        alive = {unit.tag for unit in self.units.exclude_type({UnitTypeId.SCV})}
+        self.attack_group_tags.intersection_update(alive)
+        if not self.attack_group_tags:
+            self.telemetry["attack_group_finished"] += 1
+
+    def _legal(self, name: str) -> bool:
+        if name == "scout":
+            if not self.enable_tick_scout:
+                self.telemetry["masked_untrained_scout"] += 1
+                return False
+            return bool(not self.scout_complete and self.scout_tag is None and
+                        self.units.exclude_type({UnitTypeId.SCV}))
+        if name == "attack":
+            return bool(not self.attack_group_tags and
+                        self.units.exclude_type({UnitTypeId.SCV}).amount >= self.attack_min_units)
+        return super()._legal(name)
+
+    async def _issue(self, name: str, actor, target=None) -> bool:
+        issued = await super()._issue(name, actor, target)
+        if issued and name == "scout":
+            self.scout_tag = actor.tag
+            self.telemetry["scout_assigned"] += 1
+        if issued and name == "attack":
+            self.attack_group_tags = {unit.tag for unit in self.units.exclude_type({UnitTypeId.SCV})}
+            self.telemetry["attack_group_started"] += 1
+        return issued
+
     async def on_step(self, iteration: int) -> None:
         if iteration % 16 or not self.townhalls:
             return
+        self._refresh_scout()
+        self._refresh_attack_group()
         entities, padding, owned = encode(self)
         actions, output = [self._rule_intent()], None
         if self.model:
@@ -92,23 +146,34 @@ class RichTransformerBot(TerranEntityARBot):
                                     history_scalars=history_scalars, history_actions=history_actions,
                                     target_mmr=torch.tensor([[self.target_mmr]], dtype=torch.float32))
             actions = output.intent[0].argsort(descending=True).tolist()
-        resolved = None
+        # Apply state- and SC2-legality masking *before* choosing an intent.
+        # The old loop used the first legal fallback after scoring illegal
+        # macro goals, which made the untrained scout class disproportionately
+        # likely whenever production was unavailable.
+        legal_actions = []
+        blocked_actions = []
         for action in actions:
             name = INTENTS[action].name
             if not self._legal(name):
                 self.telemetry["masked_illegal"] += 1
-                resolved = await self._resolve_goal(name)
-                if resolved:
-                    self.history.append(action)
-                    self.telemetry["prerequisite_issued"] += 1
-                    self.telemetry[f"prerequisite_for_{name}"] += 1
-                    break
-                continue
+                blocked_actions.append(action)
+            else:
+                legal_actions.append(action)
+        if legal_actions:
+            action = legal_actions[0]; name = INTENTS[action].name
             actor = self._ranked_actor(name, owned, output.actor[0]) if output else self._actor(name)
             target = self._ranked_target(name, owned, output.target[0]) if output else self._target(name)
             if await self._issue(name, actor, target):
                 self.history.append(action); self.telemetry["decisions"] += 1
-                break
+        elif blocked_actions:
+            # If there is no legal output at all, resolve only the highest
+            # ranked blocked goal rather than attempting every fallback.
+            action = blocked_actions[0]; name = INTENTS[action].name
+            resolved = await self._resolve_goal(name)
+            if resolved:
+                self.history.append(action)
+                self.telemetry["prerequisite_issued"] += 1
+                self.telemetry[f"prerequisite_for_{name}"] += 1
         if self.smoke_steps is not None and iteration >= self.smoke_steps:
             await self.client.leave()
 
